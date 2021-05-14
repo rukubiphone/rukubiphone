@@ -1,0 +1,59 @@
+---
+- name: Cau hinh tren Switch
+  hosts: Switch
+  gather_facts: no
+
+  tasks:
+    - name: tao vlan
+      ios_vlan:
+        aggregate:
+          - { vlan_id : 10 }
+          - { vlan_id : 20 }
+          - { vlan_id : 30 }
+    - name: gan cong vao vlan
+      ios_l2_interface:
+        name: "{{ item.int }}"
+        mode: access
+        access_vlan: "{{ item.vlan }}"
+      with_items:
+        - { vlan: "10", int: "fastEthernet3/0/2"}
+        - { vlan: "20", int: "fastEthernet3/0/3"}
+        - { vlan: "30", int: "fastEthernet3/0/4"}
+    - name: chuyen cong f3/0/14 sang mode trunk
+      ios_config:
+        parents:
+          - int f3/0/14
+        lines:
+          - sw trunk en dot1Q
+          - sw mode trunk
+#        match: strict
+
+- name: Cau hinh tren router
+  hosts: Router
+  gather_facts: no
+
+  tasks:
+    - name: Dat ip cho cong fastEthernet0/1
+      ios_l3_interface:
+        name: fastEthernet0/1
+        ipv4: 192.168.1.1/24
+
+    - name: dat ip subinterface
+      ios_config:
+        parents:
+          - int {{item.subint}}
+        lines:
+          - encapsulation dot1Q {{item.vlan}}
+          - ip address 192.168.{{item.vlan}}.1 255.255.255.0
+      with_items:
+        - { subint: fastEthernet0/1.10 , vlan: 10 }
+        - { subint: fastEthernet0/1.20 , vlan: 20 }
+        - { subint: fastEthernet0/1.30 , vlan: 30 }
+
+    - name: Show ip
+      ios_command:
+        commands:
+          - show ip int brief
+      register: show_ip
+
+    - debug: var=show_ip.stdout_lines

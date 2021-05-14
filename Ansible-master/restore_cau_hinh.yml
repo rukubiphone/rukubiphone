@@ -1,0 +1,14 @@
+---
+- name: Restore cau hinh
+  hosts: Router
+  connection: network_cli
+  gather_facts: no
+
+  tasks:
+    - name: Copy running config to router
+      command: scp ./backup/Router.config Router:/Router.config
+
+    - name: Replace force
+      ios_command:
+        commands:
+          - config replace flash:Router.config force

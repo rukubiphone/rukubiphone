@@ -1,0 +1,15 @@
+---
+#Error
+- name: Lien ket voi file example_vars
+  hosts: all
+  gather_facts: false
+  vars_file:
+    - example_vars.yml
+
+  tasks:
+    - name: in ten cong ty
+      debug: msg= "Hello {{ company_name }}"
+
+    - name: in ten nhom
+      with_items: "{{quotes}}"
+      debug: msg= "{{item}}"
